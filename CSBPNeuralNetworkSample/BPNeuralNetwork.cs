@@ -47,15 +47,31 @@ public class BPNeuralNetwork
         }
     }
 
-    private double TransferFunction(double input)
+    private double TransferFunction(double input, bool isOutputLayer)
     {
-        return 1 / (1 + Math.Exp(-input)); //sigmoid
+        if (isOutputLayer)
+            return 1 / (1 + Math.Exp(-input)); //sigmoid
+
+        //ReLU
+        if (input > 0)
+            return input;
+
+        return 0;
     }
 
-    private double TransferFunctionDerivative(double input)
+    private double TransferFunctionDerivative(double input, bool isOutputLayer)
     {
-        double transferResult = TransferFunction(input);
-        return (1.0 - transferResult) * transferResult; //sigmoid derivative
+        if (isOutputLayer)
+        {
+            double transferResult = TransferFunction(input, true);
+            return (1.0 - transferResult) * transferResult; //sigmoid derivative
+        }
+
+        //ReLU derivative
+        if (input > 0)
+            return 1;
+
+        return 0;
     }
     
     public double MeanSquareError(double[] target)
@@ -137,7 +153,7 @@ public class BPNeuralNetwork
                 // And the BIAS
                 sum += _weight[i][j][_layerSpec[i - 1]];
 
-                _output[i][j] = TransferFunction(sum);
+                _output[i][j] = TransferFunction(sum, i == (_layers - 1));
             }
         }
     }
@@ -150,7 +166,7 @@ public class BPNeuralNetwork
         for(int i = 0; i < _layerSpec[_layers - 1]; i++)
         {
             _delta[_layers - 1][i] =
-                TransferFunctionDerivative(_output[_layers - 1][i]) *
+                TransferFunctionDerivative(_output[_layers - 1][i], true) *
                 (target[i] - _output[_layers - 1][i]);
         }
 
@@ -164,7 +180,7 @@ public class BPNeuralNetwork
                 {
                     sum += _delta[i + 1][k] * _weight[i + 1][k][j];
                 }
-                _delta[i][j] = TransferFunctionDerivative(_output[i][j]) * sum;
+                _delta[i][j] = TransferFunctionDerivative(_output[i][j], false) * sum;
             }
         }
         
